@@ -1,3 +1,5 @@
+## Project was finished in 4-5 days, forgot to publish finalized project. That's why it looks like the project took me 2 months to complete when you check commits🤓
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
