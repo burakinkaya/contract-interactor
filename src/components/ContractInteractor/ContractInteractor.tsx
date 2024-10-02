@@ -10,7 +10,7 @@ interface ContractInteractorProps {
 }
 
 const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, chainId }) => {
-  const parsedAbi = JSON.parse(abi);
+  const parsedAbi = typeof abi === "string" ? JSON.parse(abi) : abi;
 
   const readFunctions = parsedAbi.filter((item: any) => item.type === "function" && item.stateMutability === "view");
   const writeFunctions = parsedAbi.filter((item: any) => item.type === "function" && item.stateMutability !== "view");

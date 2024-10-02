@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { isAddress } from "viem";
-import { networks } from "@/config/networks";
 
 export const useContractExist = (contractAddress: string, chainId: number) => {
   const [loading, setLoading] = useState(false);
@@ -16,38 +15,32 @@ export const useContractExist = (contractAddress: string, chainId: number) => {
       }
 
       setLoading(true);
-      const selectedNetwork = networks[chainId];
 
       try {
-        let response;
+        const response = await axios.get("/api/contractExist", {
+          params: {
+            contractAddress,
+            chainId,
+          },
+        });
 
-        if (chainId === 8008135) {
-          response = await axios.get(`${selectedNetwork.url}/v2/addresses/${contractAddress}`);
-          const { creation_tx_hash } = response.data;
-          if (creation_tx_hash) {
-            setExists(true);
-          } else {
-            setExists(false);
-            toast.error("Contract does not exist on Fhenix.");
-          }
-        } else if (chainId === 9000) {
-          setExists(true);
-          toast.info("Zama network doesn't have an endpoint or even an explorer😳, assuming contract exists.");
-        } else {
-          response = await axios.get(
-            `${selectedNetwork.url}?module=contract&action=getcontractcreation&contractaddresses=${contractAddress}&apikey=${process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY}`
+        const { exists } = response.data;
+
+        if (chainId === 9000) {
+          toast.info(
+            "Assuming contract exists on Zama network, because Zama has not even an explorer to check contract existence😳"
           );
-          const { status, message } = response.data;
-
-          if (status === "1" && message === "OK") {
-            setExists(true);
-          } else {
-            setExists(false);
-            toast.error("Contract does not exist.");
-          }
         }
-      } catch (error) {
-        toast.error("Error checking contract existence.");
+
+        if (exists) {
+          setExists(true);
+        } else {
+          setExists(false);
+          toast.error("Contract does not exist.");
+        }
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.error || "Error checking contract existence.";
+        toast.error(errorMessage);
         setExists(false);
       } finally {
         setLoading(false);
