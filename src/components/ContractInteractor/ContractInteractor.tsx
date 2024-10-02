@@ -2,14 +2,14 @@ import React, { useCallback, useEffect, useState } from "react";
 import Input from "../Input";
 import { useCustomReadContract } from "@/hooks/useCustomReadContract";
 import useCustomWriteContract from "@/hooks/useCustomWriteContract";
-import { polygon } from "viem/chains";
 
 interface ContractInteractorProps {
   abi: string;
   contract: `0x${string}`;
+  chainId: number;
 }
 
-const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract }) => {
+const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, chainId }) => {
   const parsedAbi = JSON.parse(abi);
 
   const readFunctions = parsedAbi.filter((item: any) => item.type === "function" && item.stateMutability === "view");
@@ -30,7 +30,7 @@ const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract }
     parsedAbi,
     shouldReadFetch ? selectedFunction || "" : "",
     formData[selectedFunction || ""] || [],
-    polygon.id
+    chainId
   );
 
   const { writeFunction, isPending } = useCustomWriteContract(
@@ -113,7 +113,7 @@ const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract }
             </button>
             {selectedFunction === func.name && !readIsLoading && !readError && currentData && (
               <div>
-                <p className="text-green-500">{currentData}</p>
+                <p className="text-green-500 break-all w-full">{currentData}</p>
               </div>
             )}
             {selectedFunction === func.name && readIsLoading && <p className="text-yellow-500">Loading...</p>}

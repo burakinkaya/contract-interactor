@@ -8,6 +8,7 @@ import { getInputMessageColor } from "@/utils/utils";
 import { useContractExist } from "@/hooks/useContractExist";
 import { useContractVerified } from "@/hooks/useContractVerified";
 import ContractInteractor from "@/components/ContractInteractor/ContractInteractor";
+import { useAccount } from "wagmi";
 
 const HomeContainer = () => {
   const [contractAddress, setContractAddress] = useState("");
@@ -15,8 +16,10 @@ const HomeContainer = () => {
   const [userAbi, setUserAbi] = useState<string | null>(null);
   const [validAbi, setValidAbi] = useState<boolean>(false);
 
-  const { exists, loading: loadingExist } = useContractExist(contractAddress);
-  const { verified, loading: loadingVerified, abi } = useContractVerified(contractAddress, exists === true);
+  const { chainId } = useAccount();
+
+  const { exists, loading: loadingExist } = useContractExist(contractAddress, chainId!);
+  const { verified, loading: loadingVerified, abi } = useContractVerified(contractAddress, chainId!, exists === true);
 
   const validateAbi = (abiString: string): boolean => {
     try {
@@ -101,6 +104,7 @@ const HomeContainer = () => {
         <ContractInteractor
           contract={contractAddress as `0x${string}`}
           abi={verified ? abi! : validateAbi(userAbi!) ? userAbi! : "[]"}
+          chainId={chainId!}
         />
       ) : null}
     </div>

@@ -3,12 +3,15 @@ import { waitForTransactionReceipt } from "@wagmi/core";
 import { useAccount, useConfig, useWriteContract } from "wagmi";
 import { Abi } from "viem";
 import { toast } from "react-toastify";
+import { networks } from "@/config/networks";
 
 const useCustomWriteContract = (contractAddress: `0x${string}`, abi: Abi, functionName: string, args: any[]) => {
   const { address: account, chainId } = useAccount();
   const [isPending, setIsPending] = useState(false);
   const { writeContractAsync } = useWriteContract();
   const config = useConfig();
+
+  const selectedNetwork = networks[chainId!];
 
   const writeFunction = async () => {
     console.log("custom write contract called");
@@ -27,7 +30,7 @@ const useCustomWriteContract = (contractAddress: `0x${string}`, abi: Abi, functi
       });
       await waitForTransactionReceipt(config, { hash, confirmations: 2 });
 
-      showSuccessToast(hash);
+      showSuccessToast(hash, selectedNetwork);
     } catch (error: any) {
       const errorMessage = error.message.split("\n")[0];
       console.error(`Transaction failed, ${errorMessage}`);
@@ -40,18 +43,16 @@ const useCustomWriteContract = (contractAddress: `0x${string}`, abi: Abi, functi
   return { writeFunction, isPending };
 };
 
-export const showSuccessToast = (hash: string) => {
+export const showSuccessToast = (hash: string, selectedNetwork: { explorer?: string }) => {
+  const explorerUrl = selectedNetwork?.explorer ? `${selectedNetwork.explorer}/tx/${hash}` : null;
   toast.success(
     <div>
       Transaction successful! <br />
-      <a
-        href={`https://polygonscan.com/tx/${hash}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ textDecoration: "underline" }}
-      >
-        See transaction on explorer here
-      </a>
+      {explorerUrl && (
+        <a href={explorerUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>
+          See transaction on explorer here
+        </a>
+      )}
     </div>
   );
 };

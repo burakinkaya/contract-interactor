@@ -41,11 +41,6 @@ export const arbitrumSepolia = {
 } as const satisfies CaipNetwork;
 
 export const networks: Record<number, { name: string; url: string; explorer?: string }> = {
-  80002: {
-    name: "Polygon Amoy",
-    url: "https://api.polygonscan.com/api",
-    explorer: "https://amoy.polygonscan.com",
-  },
   11155420: {
     name: "Optimism Sepolia",
     url: "https://api-sepolia-optimistic.etherscan.io/api",
