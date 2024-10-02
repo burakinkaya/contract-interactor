@@ -1,11 +1,12 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import { config, projectId, metadata } from "@/config";
-
-import { createWeb3Modal } from "@web3modal/wagmi/react";
+import { wagmiAdapter, projectId } from "@/config";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { State, WagmiProvider } from "wagmi";
+import { createAppKit } from "@reown/appkit/react";
+import { mainnet, sepolia, baseSepolia } from "@reown/appkit/networks";
+import { cookieToInitialState, WagmiProvider, type Config } from "wagmi";
+import { arbitrumSepolia, optimismSepolia, zamaDevnet, fhenixHelium } from "@/config/networks";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -14,16 +15,29 @@ const queryClient = new QueryClient();
 
 if (!projectId) throw new Error("Project ID is not defined");
 
-createWeb3Modal({
-  metadata,
-  wagmiConfig: config,
+const metadata = {
+  name: "appkit-example-scroll",
+  description: "AppKit Example - Scroll",
+  url: "https://scrollapp.com",
+  icons: ["https://avatars.githubusercontent.com/u/179229932"],
+};
+
+const modal = createAppKit({
+  adapters: [wagmiAdapter],
   projectId,
-  enableAnalytics: true,
+  networks: [mainnet, sepolia, baseSepolia, optimismSepolia, arbitrumSepolia, zamaDevnet, fhenixHelium],
+  defaultNetwork: mainnet,
+  metadata: metadata,
+  features: {
+    analytics: true,
+  },
 });
 
-export default function AppKitProvider({ children, initialState }: { children: ReactNode; initialState?: State }) {
+function ContextProvider({ children, cookies }: { children: ReactNode; cookies: string | null }) {
+  const initialState = cookieToInitialState(wagmiAdapter.wagmiConfig as Config, cookies);
+
   return (
-    <WagmiProvider config={config} initialState={initialState}>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig as Config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         {children}
         <ToastContainer />
@@ -31,3 +45,5 @@ export default function AppKitProvider({ children, initialState }: { children: R
     </WagmiProvider>
   );
 }
+
+export default ContextProvider;

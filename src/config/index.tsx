@@ -1,26 +1,21 @@
-import { defaultWagmiConfig } from "@web3modal/wagmi/react/config";
-
-import { cookieStorage, createStorage } from "wagmi";
-import { mainnet, polygon } from "wagmi/chains";
+import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import { cookieStorage, createStorage, http } from "@wagmi/core";
+import { mainnet, sepolia, baseSepolia } from "@reown/appkit/networks";
+import { optimismSepolia, arbitrumSepolia, fhenixHelium, zamaDevnet } from "./networks";
 
 export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
 if (!projectId) throw new Error("Project ID is not defined");
 
-export const metadata = {
-  name: "AppKit",
-  description: "AppKit Example",
-  url: "https://web3modal.com",
-  icons: ["https://avatars.githubusercontent.com/u/37784886"],
-};
+export const networks = [mainnet, sepolia, baseSepolia, optimismSepolia, arbitrumSepolia, zamaDevnet, fhenixHelium];
 
-const chains = [mainnet, polygon] as const;
-export const config = defaultWagmiConfig({
-  chains,
-  projectId,
-  metadata,
-  ssr: true,
+export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({
     storage: cookieStorage,
   }),
+  ssr: true,
+  projectId,
+  networks,
 });
+
+export const config = wagmiAdapter.wagmiConfig;
