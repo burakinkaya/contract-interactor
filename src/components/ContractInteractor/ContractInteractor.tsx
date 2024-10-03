@@ -1,144 +1,149 @@
-import React, { useCallback, useEffect, useState } from "react";
-import Input from "../Input";
-import { useCustomReadContract } from "@/hooks/useCustomReadContract";
-import useCustomWriteContract from "@/hooks/useCustomWriteContract";
+import React, { useEffect, useState } from "react";
+
+import { waitForTransactionReceipt } from "@wagmi/core";
+import { useAccount, useConfig, useReadContract, useWriteContract } from "wagmi";
+import { Abi } from "viem";
+import { toast } from "react-toastify";
+import { networks } from "@/config/networks";
+import { showSuccessToast } from "@/utils/toastUtils";
+
+import ReadContractFunction from "./functions/ReadContractFunction";
+import WriteContractFunction from "./functions/WriteContractFunction";
 
 interface ContractInteractorProps {
-  abi: string;
+  abi: Abi;
   contract: `0x${string}`;
   chainId: number;
 }
 
 const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, chainId }) => {
-  const parsedAbi = typeof abi === "string" ? JSON.parse(abi) : abi;
+  let parsedAbi;
+  try {
+    parsedAbi = typeof abi === "string" ? JSON.parse(abi) : abi;
+  } catch (error) {
+    parsedAbi = [];
+  }
+
+  if (!Array.isArray(parsedAbi)) {
+    parsedAbi = [];
+  }
+
+  const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
+  const [currentData, setCurrentData] = useState<any>(null);
+  const [isPending, setIsPending] = useState<boolean>(false);
+  const [inputArgs, setInputArgs] = useState<any[]>([]);
+
+  const { address: account } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+  const config = useConfig();
+
+  const selectedNetwork = networks[chainId!];
 
   const readFunctions = parsedAbi.filter((item: any) => item.type === "function" && item.stateMutability === "view");
   const writeFunctions = parsedAbi.filter((item: any) => item.type === "function" && item.stateMutability !== "view");
-
-  const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [currentData, setCurrentData] = useState<any>(null);
-  const [isWriteTriggered, setIsWriteTriggered] = useState<boolean>(false);
-  const [shouldReadFetch, setShouldReadFetch] = useState<boolean>(false);
 
   const {
     data: readData,
     error: readError,
     isLoading: readIsLoading,
-  } = useCustomReadContract(
-    contract,
-    parsedAbi,
-    shouldReadFetch ? selectedFunction || "" : "",
-    formData[selectedFunction || ""] || [],
-    chainId
-  );
+    refetch: refetchRead,
+  } = useReadContract({
+    address: contract,
+    abi: parsedAbi,
+    functionName: selectedFunction,
+    args: inputArgs,
+    chainId,
+  }) as { data: bigint | number | string | any[] | null; error: any; isLoading: boolean; refetch: () => void };
 
-  const { writeFunction, isPending } = useCustomWriteContract(
-    contract,
-    parsedAbi,
-    selectedFunction || "",
-    formData[selectedFunction || ""] || []
-  );
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>, funcName: string, inputName: string) => {
-    const value = event.target.value;
-    setFormData((prevData) => ({
-      ...prevData,
-      [funcName]: {
-        ...prevData[funcName],
-        [inputName]: value,
-      },
-    }));
+  const handleReadFunctionCall = (func: any, inputs: any[]) => {
+    console.log("custom read contract called");
+    setSelectedFunction(func.name);
+    setInputArgs(inputs);
+    refetchRead();
   };
 
-  const handleReadFunctionCall = useCallback((func: any) => {
-    setSelectedFunction(func.name);
-    setShouldReadFetch(true);
-    setIsWriteTriggered(false);
-  }, []);
+  const handleWriteFunctionCall = async (func: any, inputs: any[]) => {
+    console.log("custom write contract called");
 
-  const handleWriteFunctionCall = (func: any) => {
     setSelectedFunction(func.name);
-    setShouldReadFetch(false);
-    setIsWriteTriggered(true);
+    setInputArgs(inputs);
+
+    const formattedArgs = Array.isArray(inputs) ? inputs : Object.values(inputs);
+
+    try {
+      setIsPending(true);
+      const hash = await writeContractAsync({
+        account,
+        chainId,
+        address: contract,
+        abi: parsedAbi,
+        functionName: func.name,
+        args: formattedArgs,
+      });
+      await waitForTransactionReceipt(config, { hash, confirmations: 2 });
+      showSuccessToast(hash, selectedNetwork);
+    } catch (error: Error | any) {
+      const errorMessage = error.message.split("\n")[0];
+      console.error(`Transaction failed, ${errorMessage}`);
+      toast.error(`Transaction failed, ${errorMessage}`);
+    } finally {
+      setIsPending(false);
+    }
   };
 
   useEffect(() => {
-    const executeWriteFunction = async () => {
-      if (isWriteTriggered && !isPending && selectedFunction) {
-        await writeFunction();
-        setIsWriteTriggered(false);
-      }
-    };
+    console.log("readData:", readData);
 
-    executeWriteFunction();
-  }, [selectedFunction, isWriteTriggered]);
-
-  useEffect(() => {
     if (readData !== undefined && readData !== null && selectedFunction) {
       if (typeof readData === "bigint") {
         setCurrentData(readData.toString(10));
-      } else {
+      } else if (typeof readData === "number") {
+        setCurrentData(readData.toString());
+      } else if (typeof readData === "string") {
         setCurrentData(readData);
+      } else if (Array.isArray(readData)) {
+        const formattedArray = readData.map((item) => (typeof item === "bigint" ? item.toString(10) : item));
+        setCurrentData(JSON.stringify(formattedArray));
+      } else {
+        setCurrentData(
+          JSON.stringify(readData, (key, value) => (typeof value === "bigint" ? value.toString(10) : value))
+        );
       }
     }
   }, [readData, selectedFunction]);
 
-  const renderFunctionInputs = (func: any) => {
-    return func.inputs.map((input: any, index: number) => (
-      <Input
-        key={index}
-        type="text"
-        placeholder={input.name || input.internalType}
-        onChange={(e) => handleInputChange(e, func.name, input.name)}
-        className="border p-2 mb-4 w-full"
-      />
-    ));
-  };
-
   return (
-    <div className="flex flex-row justify-between gap-10 w-full ">
+    <div className="flex flex-row justify-between gap-10 w-full">
+      {/* Read Functions */}
       <div className="flex flex-col items-start justify-start gap-4 w-1/2">
         <h2 className="text-xl font-bold text-white">Read Contract</h2>
-        <div className="border border-white rounded-md w-full"></div>
         {readFunctions.map((func: any, index: number) => (
-          <div key={index} className="mb-4">
-            <div className="text-sm font-semibold mb-2 text-white">{func.name}</div>
-            {renderFunctionInputs(func)}
-            <button
-              onClick={() => handleReadFunctionCall(func)}
-              className="border border-yellow-600 text-white p-2 mb-2 rounded hover:bg-yellow-600 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105 active:scale-95"
-            >
-              Call {func.name}
-            </button>
-            {selectedFunction === func.name && !readIsLoading && !readError && currentData && (
-              <div>
-                <p className="text-green-500 break-all w-full">{currentData}</p>
-              </div>
-            )}
-            {selectedFunction === func.name && readIsLoading && <p className="text-yellow-500">Loading...</p>}
-            {selectedFunction === func.name && readError && <p className="text-red-500">Error: {readError.message}</p>}
-          </div>
+          <ReadContractFunction
+            key={index}
+            func={func}
+            handleFunctionCall={handleReadFunctionCall}
+            isLoading={readIsLoading}
+            isError={readError}
+            currentData={currentData}
+            selectedFunction={selectedFunction}
+          />
         ))}
       </div>
 
       <div className="border border-white rounded-md"></div>
 
-      {/* Write Contract Section */}
+      {/* Write Functions */}
       <div className="flex flex-col items-start justify-start gap-4 w-1/2">
         <h2 className="text-xl font-bold text-white">Write Contract</h2>
-        <div className="border border-white rounded-md w-full"></div>
         {writeFunctions.map((func: any, index: number) => (
-          <div key={index} className="mb-4">
-            <div className="text-sm font-semibold mb-2 text-white">{func.name}</div>
-            {renderFunctionInputs(func)}
-            <button
-              onClick={() => handleWriteFunctionCall(func)}
-              className="border border-green-600 text-white p-2 rounded-md hover:bg-green-600 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105 active:scale-95"
-            >
-              Call {func.name}
-            </button>
-          </div>
+          <WriteContractFunction
+            key={index}
+            func={func}
+            handleFunctionCall={handleWriteFunctionCall}
+            isLoading={isPending}
+            isError={null}
+            selectedFunction={selectedFunction}
+          />
         ))}
       </div>
     </div>

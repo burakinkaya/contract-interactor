@@ -2,14 +2,15 @@
 
 import Input from "@/components/Input";
 import { useState, useEffect } from "react";
-import { isAddress } from "viem";
+import { isAddress, Abi } from "viem";
 
-import { getInputMessageColor } from "@/utils/utils";
+import { getInputMessageColor, validateAbi } from "@/utils/utils";
 import { useContractExist } from "@/hooks/useContractExist";
 import { useContractVerified } from "@/hooks/useContractVerified";
 import ContractInteractor from "@/components/ContractInteractor/ContractInteractor";
 import { useAccount } from "wagmi";
 
+const emptyAbi: Abi = [];
 const HomeContainer = () => {
   const [contractAddress, setContractAddress] = useState("");
   const [inputMessage, setInputMessage] = useState("");
@@ -21,28 +22,21 @@ const HomeContainer = () => {
   const { exists, loading: loadingExist } = useContractExist(contractAddress, chainId!);
   const { verified, loading: loadingVerified, abi } = useContractVerified(contractAddress, chainId!, exists === true);
 
-  const validateAbi = (abiString: string): boolean => {
-    try {
-      const parsedAbi = JSON.parse(abiString);
-      return Array.isArray(parsedAbi);
-    } catch (error) {
-      return false;
-    }
-  };
-
   useEffect(() => {
-    if (contractAddress && isAddress(contractAddress)) {
-      if (loadingExist) {
-        setInputMessage("Searching for the contract...");
-      } else if (exists !== null) {
-        if (exists) {
-          setInputMessage("Contract exists. Verifying ABI...");
-        } else {
-          setInputMessage("Contract does not exist");
+    if (contractAddress) {
+      if (isAddress(contractAddress)) {
+        if (loadingExist) {
+          setInputMessage("Searching for the contract...");
+        } else if (exists !== null) {
+          if (exists) {
+            setInputMessage("Contract exists. Verifying ABI...");
+          } else {
+            setInputMessage("Contract does not exist");
+          }
         }
+      } else {
+        setInputMessage("Wrong Address!");
       }
-    } else if (contractAddress) {
-      setInputMessage("Wrong Address!");
     } else {
       setInputMessage("");
     }
@@ -103,7 +97,7 @@ const HomeContainer = () => {
       {(verified && abi) || (validAbi && userAbi) ? (
         <ContractInteractor
           contract={contractAddress as `0x${string}`}
-          abi={verified ? abi! : validateAbi(userAbi!) ? userAbi! : "[]"}
+          abi={verified ? abi! : validateAbi(userAbi!) ? JSON.parse(userAbi!) : emptyAbi}
           chainId={chainId!}
         />
       ) : null}
