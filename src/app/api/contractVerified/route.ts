@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
-import { fhenixHelium, networks } from "@/config/networks";
+import { networks } from "@/config/networks";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -13,35 +12,17 @@ export async function GET(req: Request) {
 
   const selectedNetwork = networks[Number(chainId)];
 
+  if (!selectedNetwork) {
+    return NextResponse.json({ error: "Unsupported network" }, { status: 400 });
+  }
+
   try {
-    let response;
+    const abi = await selectedNetwork.getAbi(contractAddress);
 
-    if (Number(chainId) === fhenixHelium.chainId) {
-      response = await axios.get(`${selectedNetwork.url}/v2/smart-contracts/${contractAddress}`);
-      const fhenixAbi = response.data.abi || [];
+    const verified = abi.length > 0;
 
-      if (fhenixAbi.length > 0) {
-        return NextResponse.json({ verified: true, abi: fhenixAbi }, { status: 200 });
-      } else {
-        return NextResponse.json(
-          { verified: false, error: "No ABI found for this contract on Fhenix" },
-          { status: 404 }
-        );
-      }
-    } else {
-      response = await axios.get(
-        `${selectedNetwork.url}?module=contract&action=getabi&address=${contractAddress}&apikey=${process.env.ETHERSCAN_API_KEY}`
-      );
-
-      const { status, message, result } = response.data;
-
-      if (status === "1" && message === "OK") {
-        return NextResponse.json({ verified: true, abi: result }, { status: 200 });
-      } else {
-        return NextResponse.json({ verified: false, error: "ABI not found or contract not verified" }, { status: 404 });
-      }
-    }
+    return NextResponse.json({ verified, abi }, { status: 200 });
   } catch (error: Error | any) {
-    return NextResponse.json({ error: error.message || "Error checking contract verification" }, { status: 500 });
+    return NextResponse.json({ verified: false, error: error.message }, { status: 500 });
   }
 }

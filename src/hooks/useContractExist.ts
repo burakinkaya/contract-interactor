@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { isAddress } from "viem";
+import { zamaDevnet } from "@/config/networks";
 
 export const useContractExist = (contractAddress: string, chainId: number) => {
   const [loading, setLoading] = useState(false);
@@ -26,9 +27,9 @@ export const useContractExist = (contractAddress: string, chainId: number) => {
 
         const { exists } = response.data;
 
-        if (chainId === 9000) {
+        if (Number(chainId) === zamaDevnet.chainId) {
           toast.info(
-            "Assuming contract exists on Zama network, because Zama has not even an explorer to check contract existence😳"
+            "Assuming contract exists on Zama network, because Zama doesn't yet have an explorer to check contract existence😳"
           );
         }
 
@@ -38,7 +39,7 @@ export const useContractExist = (contractAddress: string, chainId: number) => {
           setExists(false);
           toast.error("Contract does not exist.");
         }
-      } catch (error: any) {
+      } catch (error: Error | any) {
         const errorMessage = error.response?.data?.error || "Error checking contract existence.";
         toast.error(errorMessage);
         setExists(false);

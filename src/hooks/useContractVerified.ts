@@ -36,7 +36,7 @@ export const useContractVerified = (contractAddress: string, chainId: number, sh
           setVerified(false);
           toast.error("ABI not found or contract not verified.");
         }
-      } catch (error: any) {
+      } catch (error: Error | any) {
         const errorMessage = error.response?.data?.error || "Error checking contract verification.";
         toast.error(errorMessage);
         setVerified(false);
