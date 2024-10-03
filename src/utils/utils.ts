@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export const getInputMessageColor = (inputMessage: string) => {
   switch (inputMessage) {
     case "Contract does not exist":
@@ -24,25 +26,33 @@ export const validateAbi = (abiString: string): boolean => {
 };
 
 export const getExistFromEtherscanishApi = async (url: string, contractAddress: string, apiKey: string) => {
-  const response = await fetch(
-    `${url}?module=contract&action=getcontractcreation&contractaddresses=${contractAddress}&apikey=${apiKey}`
-  );
-  const data = await response.json();
+  try {
+    const response = await axios.get(
+      `${url}?module=contract&action=getcontractcreation&contractaddresses=${contractAddress}&apikey=${apiKey}`
+    );
+    const data = response.data;
 
-  if (data.status === "1" && data.message === "OK") {
-    return true;
+    if (data.status === "1" && data.message === "OK") {
+      return true;
+    }
+    throw new Error("Contract does not exist or is not verified");
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Error checking contract existence");
   }
-
-  throw new Error("Contract does not exist or is not verified");
 };
 
 export const getAbiFromEtherscanishApi = async (url: string, contractAddress: string, apiKey: string) => {
-  const response = await fetch(`${url}?module=contract&action=getabi&address=${contractAddress}&apikey=${apiKey}`);
-  const data = await response.json();
+  try {
+    const response = await axios.get(
+      `${url}?module=contract&action=getabi&address=${contractAddress}&apikey=${apiKey}`
+    );
+    const data = response.data;
 
-  if (data.status === "1" && data.message === "OK") {
-    return data.result;
+    if (data.status === "1" && data.message === "OK") {
+      return data.result;
+    }
+    throw new Error("ABI not found or contract not verified");
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Error fetching ABI");
   }
-
-  throw new Error("ABI not found or contract not verified");
 };
