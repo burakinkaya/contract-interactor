@@ -62,10 +62,10 @@ export const networks: Record<
     url: "https://api-sepolia-optimistic.etherscan.io/api",
     explorer: "https://sepolia-optimism.etherscan.io",
     getAbi(contractAddress: string) {
-      return getAbiFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getAbiFromEtherscanishApi(this.url, contractAddress);
     },
     getExist(contractAddress: string) {
-      return getExistFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getExistFromEtherscanishApi(this.url, contractAddress);
     },
   },
   421614: {
@@ -73,10 +73,10 @@ export const networks: Record<
     url: "https://api-sepolia.arbiscan.io/api",
     explorer: "https://sepolia.arbiscan.io",
     getAbi(contractAddress: string) {
-      return getAbiFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getAbiFromEtherscanishApi(this.url, contractAddress);
     },
     getExist(contractAddress: string) {
-      return getExistFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getExistFromEtherscanishApi(this.url, contractAddress);
     },
   },
   84532: {
@@ -84,10 +84,10 @@ export const networks: Record<
     url: "https://api-sepolia.basescan.org/api",
     explorer: "https://sepolia.basescan.org",
     getAbi(contractAddress: string) {
-      return getAbiFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getAbiFromEtherscanishApi(this.url, contractAddress);
     },
     getExist(contractAddress: string) {
-      return getExistFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getExistFromEtherscanishApi(this.url, contractAddress);
     },
   },
   11155111: {

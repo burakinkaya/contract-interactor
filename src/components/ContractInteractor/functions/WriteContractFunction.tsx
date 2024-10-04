@@ -5,7 +5,6 @@ interface WriteContractFunctionProps {
   func: any;
   handleFunctionCall: (func: any, inputs: any[]) => void;
   isLoading: boolean;
-  isError: any;
   selectedFunction: string | null;
 }
 
@@ -13,7 +12,6 @@ const WriteContractFunction: React.FC<WriteContractFunctionProps> = ({
   func,
   handleFunctionCall,
   isLoading,
-  isError,
   selectedFunction,
 }) => {
   const [inputs, setInputs] = useState<Record<string, any>>({});
@@ -28,12 +26,7 @@ const WriteContractFunction: React.FC<WriteContractFunctionProps> = ({
       >
         Call {func.name}
       </button>
-      {selectedFunction === func.name && (
-        <>
-          {isLoading && <p className="text-yellow-500">Loading...</p>}
-          {isError && <p className="text-red-500">Error: {isError.message}</p>}
-        </>
-      )}
+      {selectedFunction === func.name && <>{isLoading && <p className="text-yellow-500">Loading...</p>}</>}
     </div>
   );
 };

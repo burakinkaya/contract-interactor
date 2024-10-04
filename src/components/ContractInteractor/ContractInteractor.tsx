@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { useAccount, useConfig, useReadContract, useWriteContract } from "wagmi";
 import { Abi } from "viem";
@@ -17,19 +16,9 @@ interface ContractInteractorProps {
 }
 
 const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, chainId }) => {
-  let parsedAbi;
-  try {
-    parsedAbi = typeof abi === "string" ? JSON.parse(abi) : abi;
-  } catch (error) {
-    parsedAbi = [];
-  }
-
-  if (!Array.isArray(parsedAbi)) {
-    parsedAbi = [];
-  }
-
+  const [parsedAbi, setParsedAbi] = useState<Abi>([]);
   const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
-  const [currentData, setCurrentData] = useState<any>(null);
+  const [functionResults, setFunctionResults] = useState<Record<string, any>>({});
   const [isPending, setIsPending] = useState<boolean>(false);
   const [inputArgs, setInputArgs] = useState<any[]>([]);
 
@@ -39,18 +28,14 @@ const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, 
 
   const selectedNetwork = networks[chainId!];
 
-  const readFunctions = parsedAbi.filter((item: any) => item.type === "function" && item.stateMutability === "view");
-  const writeFunctions = parsedAbi.filter((item: any) => item.type === "function" && item.stateMutability !== "view");
-
   const {
     data: readData,
     error: readError,
     isLoading: readIsLoading,
-    refetch: refetchRead,
   } = useReadContract({
     address: contract,
     abi: parsedAbi,
-    functionName: selectedFunction,
+    functionName: selectedFunction!,
     args: inputArgs,
     chainId,
   }) as { data: bigint | number | string | any[] | null; error: any; isLoading: boolean; refetch: () => void };
@@ -59,19 +44,17 @@ const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, 
     console.log("custom read contract called");
     setSelectedFunction(func.name);
     setInputArgs(inputs);
-    refetchRead();
   };
 
   const handleWriteFunctionCall = async (func: any, inputs: any[]) => {
     console.log("custom write contract called");
-
     setSelectedFunction(func.name);
     setInputArgs(inputs);
 
     const formattedArgs = Array.isArray(inputs) ? inputs : Object.values(inputs);
 
+    setIsPending(true);
     try {
-      setIsPending(true);
       const hash = await writeContractAsync({
         account,
         chainId,
@@ -92,42 +75,39 @@ const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, 
   };
 
   useEffect(() => {
-    console.log("readData:", readData);
+    let parsed = [];
+    try {
+      parsed = typeof abi === "string" ? JSON.parse(abi) : abi;
+    } catch (error) {
+      console.error("Failed to parse ABI");
+    }
+    if (Array.isArray(parsed)) {
+      setParsedAbi(parsed);
+    }
+  }, [abi]);
 
-    if (readData !== undefined && readData !== null && selectedFunction) {
-      if (typeof readData === "bigint") {
-        setCurrentData(readData.toString(10));
-      } else if (typeof readData === "number") {
-        setCurrentData(readData.toString());
-      } else if (typeof readData === "string") {
-        setCurrentData(readData);
-      } else if (Array.isArray(readData)) {
-        const formattedArray = readData.map((item) => (typeof item === "bigint" ? item.toString(10) : item));
-        setCurrentData(JSON.stringify(formattedArray));
-      } else {
-        setCurrentData(
-          JSON.stringify(readData, (key, value) => (typeof value === "bigint" ? value.toString(10) : value))
-        );
-      }
+  useEffect(() => {
+    if (selectedFunction && readData !== undefined && readData !== null) {
+      setFunctionResults((prevResults) => ({
+        ...prevResults,
+        [selectedFunction]: `${readData}`,
+      }));
     }
   }, [readData, selectedFunction]);
+
+  const readProps = { isLoading: readIsLoading, isError: readError, functionResults, selectedFunction };
+  const writeProps = { isLoading: isPending, selectedFunction };
 
   return (
     <div className="flex flex-row justify-between gap-10 w-full">
       {/* Read Functions */}
       <div className="flex flex-col items-start justify-start gap-4 w-1/2">
         <h2 className="text-xl font-bold text-white">Read Contract</h2>
-        {readFunctions.map((func: any, index: number) => (
-          <ReadContractFunction
-            key={index}
-            func={func}
-            handleFunctionCall={handleReadFunctionCall}
-            isLoading={readIsLoading}
-            isError={readError}
-            currentData={currentData}
-            selectedFunction={selectedFunction}
-          />
-        ))}
+        {parsedAbi
+          .filter((item: any) => item.type === "function" && item.stateMutability === "view")
+          .map((func: any, index: number) => (
+            <ReadContractFunction key={index} func={func} handleFunctionCall={handleReadFunctionCall} {...readProps} />
+          ))}
       </div>
 
       <div className="border border-white rounded-md"></div>
@@ -135,16 +115,16 @@ const ContractInteractor: React.FC<ContractInteractorProps> = ({ abi, contract, 
       {/* Write Functions */}
       <div className="flex flex-col items-start justify-start gap-4 w-1/2">
         <h2 className="text-xl font-bold text-white">Write Contract</h2>
-        {writeFunctions.map((func: any, index: number) => (
-          <WriteContractFunction
-            key={index}
-            func={func}
-            handleFunctionCall={handleWriteFunctionCall}
-            isLoading={isPending}
-            isError={null}
-            selectedFunction={selectedFunction}
-          />
-        ))}
+        {parsedAbi
+          .filter((item: any) => item.type === "function" && item.stateMutability !== "view")
+          .map((func: any, index: number) => (
+            <WriteContractFunction
+              key={index}
+              func={func}
+              handleFunctionCall={handleWriteFunctionCall}
+              {...writeProps}
+            />
+          ))}
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export const validateAbi = (abiString: string): boolean => {
   }
 };
 
-export const getExistFromEtherscanishApi = async (url: string, contractAddress: string, apiKey: string) => {
+export const getExistFromEtherscanishApi = async (url: string, contractAddress: string, apiKey?: string) => {
   try {
     const response = await axios.get(
       `${url}?module=contract&action=getcontractcreation&contractaddresses=${contractAddress}&apikey=${apiKey}`
@@ -41,7 +41,7 @@ export const getExistFromEtherscanishApi = async (url: string, contractAddress: 
   }
 };
 
-export const getAbiFromEtherscanishApi = async (url: string, contractAddress: string, apiKey: string) => {
+export const getAbiFromEtherscanishApi = async (url: string, contractAddress: string, apiKey?: string) => {
   try {
     const response = await axios.get(
       `${url}?module=contract&action=getabi&address=${contractAddress}&apikey=${apiKey}`

@@ -6,7 +6,7 @@ interface ReadContractFunctionProps {
   handleFunctionCall: (func: any, inputs: any[]) => void;
   isLoading: boolean;
   isError: any;
-  currentData: any;
+  functionResults: Record<string, any>;
   selectedFunction: string | null;
 }
 
@@ -15,7 +15,7 @@ const ReadContractFunction: React.FC<ReadContractFunctionProps> = ({
   handleFunctionCall,
   isLoading,
   isError,
-  currentData,
+  functionResults,
   selectedFunction,
 }) => {
   const [inputs, setInputs] = useState<Record<string, any>>({});
@@ -34,8 +34,11 @@ const ReadContractFunction: React.FC<ReadContractFunctionProps> = ({
         <>
           {isLoading && <p className="text-yellow-500">Loading...</p>}
           {isError && <p className="text-red-500">Error: {isError.message}</p>}
-          {currentData && !isLoading && <p className="text-green-500 break-all w-full">{currentData}</p>}
         </>
+      )}
+
+      {functionResults[func.name] && !isLoading && (
+        <p className="text-green-500 break-all w-full">{functionResults[func.name]}</p>
       )}
     </div>
   );
