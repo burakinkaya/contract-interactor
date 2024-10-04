@@ -1,4 +1,9 @@
-import { getAbiFromEtherscanishApi, getExistFromEtherscanishApi } from "@/utils/utils";
+import {
+  getExistWithFallback,
+  getAbiWithFallback,
+  getAbiFromBlockscoutishApi,
+  getExistFromBlockscoutishApi,
+} from "@/utils/utils";
 import { CaipNetwork } from "@reown/appkit";
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY!;
@@ -51,59 +56,64 @@ export const networks: Record<
   number,
   {
     name: string;
-    url: string;
+    primaryUrl: string;
     explorer?: string;
+    secondaryUrl?: string;
     getAbi: (contractAddress: string) => Promise<any>;
     getExist: (contractAddress: string) => Promise<boolean>;
   }
 > = {
   11155420: {
     name: "Optimism Sepolia",
-    url: "https://api-sepolia-optimistic.etherscan.io/api",
+    primaryUrl: "https://api-sepolia-optimistic.etherscan.io/api",
     explorer: "https://sepolia-optimism.etherscan.io",
+    secondaryUrl: "https://optimism-sepolia.blockscout.com/api",
     getAbi(contractAddress: string) {
-      return getAbiFromEtherscanishApi(this.url, contractAddress);
+      return getAbiWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
     getExist(contractAddress: string) {
-      return getExistFromEtherscanishApi(this.url, contractAddress);
+      return getExistWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
   },
   421614: {
     name: "Arbitrum Sepolia",
-    url: "https://api-sepolia.arbiscan.io/api",
+    primaryUrl: "https://api-sepolia.arbiscan.io/api",
     explorer: "https://sepolia.arbiscan.io",
+    secondaryUrl: "https://arbitrum-sepolia.blockscout.com/api",
     getAbi(contractAddress: string) {
-      return getAbiFromEtherscanishApi(this.url, contractAddress);
+      return getAbiWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
     getExist(contractAddress: string) {
-      return getExistFromEtherscanishApi(this.url, contractAddress);
+      return getExistWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
   },
   84532: {
     name: "Base Sepolia",
-    url: "https://api-sepolia.basescan.org/api",
+    primaryUrl: "https://api-sepolia.basescan.org/api",
     explorer: "https://sepolia.basescan.org",
+    secondaryUrl: "https://base-sepolia.blockscout.com/api",
     getAbi(contractAddress: string) {
-      return getAbiFromEtherscanishApi(this.url, contractAddress);
+      return getAbiWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
     getExist(contractAddress: string) {
-      return getExistFromEtherscanishApi(this.url, contractAddress);
+      return getExistWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
   },
   11155111: {
     name: "Ethereum Sepolia",
-    url: "https://api-sepolia.etherscan.io/api",
+    primaryUrl: "https://api-sepolia.etherscan.io/api",
     explorer: "https://sepolia.etherscan.io",
+    secondaryUrl: "https://sepolia.blockscout.com/api",
     getAbi(contractAddress: string) {
-      return getAbiFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getAbiWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress, ETHERSCAN_API_KEY);
     },
     getExist(contractAddress: string) {
-      return getExistFromEtherscanishApi(this.url, contractAddress, ETHERSCAN_API_KEY);
+      return getExistWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress, ETHERSCAN_API_KEY);
     },
   },
   9000: {
     name: "Zama Devnet",
-    url: "https://explorer.devnet.zama.ai",
+    primaryUrl: "https://explorer.devnet.zama.ai",
     async getAbi(contractAddress: string) {
       return Promise.resolve([]);
     },
@@ -111,26 +121,15 @@ export const networks: Record<
       return Promise.resolve(true);
     },
   },
-
   8008135: {
     name: "Fhenix Devnet",
-    url: "https://explorer.helium.fhenix.zone/api",
+    primaryUrl: "https://explorer.helium.fhenix.zone/api",
     explorer: "https://explorer.helium.fhenix.zone",
     async getAbi(contractAddress: string) {
-      const response = await fetch(`${this.url}/v2/smart-contracts/${contractAddress}`);
-      const data = await response.json();
-      if (data.abi) {
-        return data.abi;
-      }
-      throw new Error("No ABI found for this contract on Fhenix");
+      return getAbiFromBlockscoutishApi(this.primaryUrl, contractAddress);
     },
     async getExist(contractAddress: string) {
-      const response = await fetch(`${this.url}/v2/addresses/${contractAddress}`);
-      const data = await response.json();
-      if (data.creation_tx_hash) {
-        return true;
-      }
-      throw new Error("Contract does not exist on Fhenix");
+      return getExistFromBlockscoutishApi(this.primaryUrl, contractAddress);
     },
   },
 };
