@@ -98,7 +98,6 @@ const HomeContainer = () => {
         <ContractInteractor
           contract={contractAddress as `0x${string}`}
           abi={verified ? abi! : validateAbi(userAbi!) ? JSON.parse(userAbi!) : emptyAbi}
-          chainId={chainId!}
         />
       ) : null}
     </div>

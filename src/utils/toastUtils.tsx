@@ -1,7 +1,7 @@
 import { toast } from "react-toastify";
 
-export const showSuccessToast = (hash: string, selectedNetwork: { explorer?: string }) => {
-  const explorerUrl = selectedNetwork?.explorer ? `${selectedNetwork.explorer}/tx/${hash}` : null;
+export const showSuccessToast = (hash: string, explorerBaseUrl: string) => {
+  const explorerUrl = explorerBaseUrl ? `${explorerBaseUrl}/tx/${hash}` : null;
   toast.success(
     <div>
       Transaction successful! <br />
