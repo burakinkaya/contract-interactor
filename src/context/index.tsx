@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
 import { mainnet, sepolia, baseSepolia } from "@reown/appkit/networks";
 import { cookieToInitialState, WagmiProvider, type Config } from "wagmi";
-import { arbitrumSepolia, optimismSepolia, zamaDevnet, fhenixHelium } from "@/config/networks";
+import { arbitrumSepolia, optimismSepolia, scrollSepolia, zamaDevnet, fhenixHelium } from "@/config/networks";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -25,7 +25,7 @@ const metadata = {
 const modal = createAppKit({
   adapters: [wagmiAdapter],
   projectId,
-  networks: [mainnet, sepolia, baseSepolia, optimismSepolia, arbitrumSepolia, zamaDevnet, fhenixHelium],
+  networks: [mainnet, sepolia, baseSepolia, arbitrumSepolia, optimismSepolia, scrollSepolia, zamaDevnet, fhenixHelium],
   defaultNetwork: mainnet,
   metadata: metadata,
   features: {

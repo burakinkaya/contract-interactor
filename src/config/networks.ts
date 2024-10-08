@@ -52,6 +52,16 @@ export const arbitrumSepolia = {
   chainNamespace: "eip155",
 } as const satisfies CaipNetwork;
 
+export const scrollSepolia = {
+  id: "eip155:534351",
+  chainId: 534351,
+  name: "Scroll Sepolia",
+  currency: "ETH",
+  rpcUrl: "https://scroll-sepolia.blockpi.network/v1/rpc/public",
+  explorerUrl: "https://sepolia.scrollscan.com",
+  chainNamespace: "eip155",
+} as const satisfies CaipNetwork;
+
 export const networks: Record<
   number,
   {
@@ -68,6 +78,7 @@ export const networks: Record<
     primaryUrl: "https://api-sepolia-optimistic.etherscan.io/api",
     explorer: "https://sepolia-optimism.etherscan.io",
     secondaryUrl: "https://optimism-sepolia.blockscout.com/api",
+
     getAbi(contractAddress: string) {
       return getAbiWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
@@ -80,6 +91,17 @@ export const networks: Record<
     primaryUrl: "https://api-sepolia.arbiscan.io/api",
     explorer: "https://sepolia.arbiscan.io",
     secondaryUrl: "https://arbitrum-sepolia.blockscout.com/api",
+    getAbi(contractAddress: string) {
+      return getAbiWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
+    },
+    getExist(contractAddress: string) {
+      return getExistWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
+    },
+  },
+  534351: {
+    name: "Scroll Sepolia",
+    primaryUrl: "https://api-sepolia.scrollscan.com/api",
+    explorer: "https://sepolia.scrollscan.com",
     getAbi(contractAddress: string) {
       return getAbiWithFallback(this.primaryUrl, this.secondaryUrl!, contractAddress);
     },
